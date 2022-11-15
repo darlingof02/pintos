@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Pintos
 Labs for Principles of Operating Systems course (CompSci 143A) at UCI. [Pintos](http://pintos-os.org) 
 is a teaching operating system for x86, challenging but not overwhelming, small

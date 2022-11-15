@@ -90,6 +90,9 @@ void
 timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
+  /* (add code)
+   * call the function that insert thread to the sleep queue
+   */
 
   ASSERT (intr_get_level () == INTR_ON);
   while (timer_elapsed (start) < ticks) 
@@ -172,6 +175,16 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
+  
+  /* (add code)
+   * check sleep list and the global tick.
+   * find any threads to wake up,
+   * move them to the ready list if necessary
+   * update the global tick
+   */
+  /*
+   * at every tick check whether some thread must wake up from sleep queue and call wake up function
+   */
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

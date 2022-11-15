@@ -134,6 +134,28 @@ pintos_init (void)
     run_actions (argv);
   } else {
     // TODO: no command line passed to kernel. Run interactively 
+    char command[50];
+  char whoami[20] = "whoami";
+  char exitCommand[20] = "exit";
+  //printf("ICS143A> ");
+  while(1) {
+    char ch = ' ';
+    int i = 0;
+    while ((ch = input_getc()) != '\n') {
+      command[i++] = ch;
+    }
+    command[i] = '\0';
+    char prefix[50] = "ICS143A>";
+    printf("%s%s\n",prefix, command);
+    if (strcmp(command, exitCommand) == 0)
+      break;
+    else if (strcmp(command, whoami) == 0)
+      printf("Yizhuang Peng\n");
+    else
+      printf("Invalid Command\n");
+
+  }
+
   }
 
   /* Finish up. */

@@ -1,0 +1,50 @@
+			+-------------------------+
+			|      CompSci 143A       |
+			| PROJECT 0: Getting Real |
+			|     DESIGN DOCUMENT     |
+			+-------------------------+
+				   
+---- AUTHOR ----
+
+>> Fill in your name and email address.
+
+Yizhuang Peng <yizhuap@uci.edu>
+
+---- PRELIMINARIES ----
+
+>> If you have any preliminary comments on your submission, or notes for the
+>> TAs, please give them here.
+
+>> Please cite any offline or online sources you consulted while
+>> preparing your submission, other than the Pintos documentation, course
+>> text, lecture notes, and course staff.
+
+			     Booting Pintos
+			     ==============
+
+---- QUESTIONS ---- 
+>> Put the screenshots of Pintos running in src/p0.
+>> A1: Is there any particular issue that you would like us to know?
+No
+
+			     Kernel Monitor
+			     ==============
+
+---- DATA STRUCTURES ----
+
+>> C1: Copy here the declaration of each new or changed `struct' or
+>> `struct' member, global or static variable, `typedef', or
+>> enumeration.  Identify the purpose of each in 25 words or less.
+nothing
+
+---- ALGORITHMS ----
+>> C2: Explain how you read and write to the console for the kernel monitor.
+use input_getc() to get input from keyboard;
+if it reads a 'return', it will read the command;
+if it is "whoami", it will write my name to the console;
+if it is "exit", it will stop interacting;
+if it is something else. it will write "invalid command" to the console;
+
+
+>> C3: Any additional enhancement you implement?
+Nothing;

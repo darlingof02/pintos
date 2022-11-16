@@ -7,6 +7,7 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
+#include "lib/kernel/list.h"
 
 extern struct list sleep_list;
 /* See [8254] for hardware details of the 8254 timer chip. */
@@ -98,10 +99,11 @@ timer_sleep (int64_t ticks)
   ASSERT (intr_get_level () == INTR_ON);
 //  while (timer_elapsed (start) < ticks)
 //    thread_yield ();
+    
     struct thread *currentThread = thread_current (); //get current thread
     ASSERT (!intr_context ()); //make sure it is not external inturrupt
     intr_disable (); //disable current interrupt
-    currentThread -> status = THREAD_BLOCKED;  // make it to sleeping state
+    //currentThread -> status = THREAD_BLOCKED;  // make it to sleeping state
     currentThread -> wakingUpTick = start + ticks; // save the tick for waking up
     list_insert_ordered (&sleep_list, &currentThread->elem, tick_less, NULL); // save current thread into sleeping list
     thread_block();
@@ -194,7 +196,6 @@ timer_interrupt (struct intr_frame *args UNUSED)
   /*
    * at every tick check whether some thread must wake up from sleep queue and call wake up function
    */
-    intr_disable();
     struct list_elem *e;
     for (e = list_begin (&sleep_list); e != list_end (&sleep_list); e = list_next (e))
     {
@@ -207,7 +208,6 @@ timer_interrupt (struct intr_frame *args UNUSED)
             thread_unblock(nearestThread);
         }
     }
-    intr_enable();
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

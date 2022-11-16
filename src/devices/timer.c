@@ -31,7 +31,7 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
-bool tick_less(struct list_elem *a_, struct list_elem *b_, void *aux);
+
 /* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
@@ -99,15 +99,15 @@ timer_sleep (int64_t ticks)
   ASSERT (intr_get_level () == INTR_ON);
 //  while (timer_elapsed (start) < ticks)
 //    thread_yield ();
-    
-    struct thread *currentThread = thread_current (); //get current thread
-    ASSERT (!intr_context ()); //make sure it is not external inturrupt
-    intr_disable (); //disable current interrupt
-    //currentThread -> status = THREAD_BLOCKED;  // make it to sleeping state
-    currentThread -> wakingUpTick = start + ticks; // save the tick for waking up
-    list_insert_ordered (&sleep_list, &currentThread->elem, tick_less, NULL); // save current thread into sleeping list
-    thread_block();
-    intr_enable (); // enable interrupt
+    sleepThread(start,ticks);
+//    struct thread *currentThread = thread_current (); //get current thread
+//    ASSERT (!intr_context ()); //make sure it is not external inturrupt
+//    intr_disable (); //disable current interrupt
+//    //currentThread -> status = THREAD_BLOCKED;  // make it to sleeping state
+//    currentThread -> wakingUpTick = start + ticks; // save the tick for waking up
+//    list_insert_ordered (&sleep_list, &currentThread->elem, tick_less, NULL); // save current thread into sleeping list
+//    thread_block();
+//    intr_enable (); // enable interrupt
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -281,11 +281,4 @@ real_time_delay (int64_t num, int32_t denom)
   busy_wait (loops_per_tick * num / 1000 * TIMER_FREQ / (denom / 1000)); 
 }
 
-bool tick_less(struct list_elem *a, struct list_elem *b,
-               void *aux )
-{
-    struct thread *threadA = list_entry (a, struct thread, elem);
-    struct thread *threadB = list_entry (b, struct thread, elem);
-    return threadA->wakingUpTick < threadB->wakingUpTick;
 
-}

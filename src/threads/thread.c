@@ -14,7 +14,7 @@
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
-
+#include "devices/timer.h"
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
    of thread.h for details. */
@@ -72,7 +72,7 @@ static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
-
+bool tick_less(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED);
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -591,6 +591,28 @@ allocate_tid (void)
   return tid;
 }
 
+bool tick_less(const struct list_elem *a, const struct list_elem *b,
+               void *aux UNUSED)
+{
+    struct thread *threadA = list_entry (a, struct thread, elem);
+    struct thread *threadB = list_entry (b, struct thread, elem);
+    return threadA->wakingUpTick < threadB->wakingUpTick;
+
+}
+
+void sleepThread(int64_t start, int64_t ticks){
+    struct thread *currentThread = thread_current (); //get current thread
+    ASSERT (!intr_context ()); //make sure it is not external inturrupt
+    intr_disable (); //disable current interrupt
+    if (currentThread != idle_thread){
+    //currentThread -> status = THREAD_BLOCKED;  // make it to sleeping state
+    currentThread -> wakingUpTick = start + ticks; // save the tick for waking up
+    list_insert_ordered (&sleep_list, &currentThread->elem, tick_less, NULL); // save current thread into sleeping list
+    }
+    thread_block();
+    intr_enable (); // enable interrupt
+}
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+

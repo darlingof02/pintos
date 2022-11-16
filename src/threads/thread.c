@@ -94,7 +94,9 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
-    
+  /*(add code)(1)
+   * add the code to initialize the sleep queue data structure
+   */  
     list_init (&sleep_list);
     
   /* Set up a thread structure for the running thread. */
@@ -103,9 +105,7 @@ thread_init (void)
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 
-  /*(add code)(1)
-   * add the code to initialize the sleep queue data structure
-   */
+  
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -604,7 +604,11 @@ allocate_tid (void)
 
   return tid;
 }
-
+
+/* (add code)
+ * comparator
+ * compare the wakingUpTick between two threads
+ */
 bool tick_less(const struct list_elem *a, const struct list_elem *b,
                void *aux UNUSED)
 {
@@ -613,7 +617,9 @@ bool tick_less(const struct list_elem *a, const struct list_elem *b,
     return threadA->wakingUpTick < threadB->wakingUpTick;
 
 }
-
+/* (add code) 
+ * put current thread in sleep_list 
+ */
 void sleepThread(int64_t start, int64_t ticks){
     struct thread *currentThread = thread_current (); //get current thread
     ASSERT (!intr_context ()); //make sure it is not external inturrupt

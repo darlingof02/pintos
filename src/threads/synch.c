@@ -73,6 +73,10 @@ sema_down (struct semaphore *sema)
     }
   sema->value--;
   intr_set_level (old_level);
+
+  /* (add code)(2)
+   * insert thread at waiters list in order of priority
+   */
 }
 
 /* Down or "P" operation on a semaphore, but only if the
@@ -118,6 +122,10 @@ sema_up (struct semaphore *sema)
                                 struct thread, elem));
   sema->value++;
   intr_set_level (old_level);
+
+  /* (add code)(2)
+   * it is to consider the case of changing priority of threads in waiters list
+   */
 }
 
 static void sema_test_helper (void *sema_);
@@ -299,6 +307,10 @@ cond_wait (struct condition *cond, struct lock *lock)
   lock_release (lock);
   sema_down (&waiter.semaphore);
   lock_acquire (lock);
+
+  /* (add code)(2)
+   * insert thread at waiters list in order of priority
+   */
 }
 
 /* If any threads are waiting on COND (protected by LOCK), then
@@ -319,6 +331,9 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED)
   if (!list_empty (&cond->waiters)) 
     sema_up (&list_entry (list_pop_front (&cond->waiters),
                           struct semaphore_elem, elem)->semaphore);
+  /* (add code)(2)
+   * it is to consider the case of changing priority of threads in waiters list
+   */
 }
 
 /* Wakes up all threads, if any, waiting on COND (protected by

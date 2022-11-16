@@ -99,7 +99,7 @@ thread_init (void)
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 
-  /*(add code)
+  /*(add code)(1)
    * add the code to initialize the sleep queue data structure
    */
 }
@@ -205,9 +205,10 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
-  /* (add code)
+  /* (add code)(2)
    * compare the priorities of the currently running thread and the newly inserted one. Yield the CPU if the newly arriving thread has higher priority
    */
+  
 
   return tid;
 }
@@ -248,6 +249,11 @@ thread_unblock (struct thread *t)
   list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
+
+  /* (add code)(2)
+   * when the threads is unblocked, it is inserted to ready_list in the priority order
+   * use list_insert_ordered(&ready_list, &t->elem, cmp_priority, NULL)
+   */
 }
 
 /* Returns the name of the running thread. */
@@ -320,6 +326,10 @@ thread_yield (void)
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
+
+  /* (add code)(2)
+   * the current thread yields CPU and it is inserted to ready_list in priority order
+   */
 }
 
 /* Invoke function 'func' on all threads, passing along 'aux'.
@@ -344,6 +354,10 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+  /* (add code)(2)
+   * set priority of the current thread
+   * reorder the ready_list
+   */
 }
 
 /* Returns the current thread's priority. */

@@ -95,8 +95,19 @@ timer_sleep (int64_t ticks)
    */
 
   ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+//  while (timer_elapsed (start) < ticks)
+//    thread_yield ();
+    struct thread *currentThread = thread_current (); //get current thread
+    ASSERT (!intr_context ()); //make sure it is not external inturrupt
+    intr_disable (); //disable current interrupt
+    if (currentThread != idle_thread){ //if current thrad is not an idle thread
+        currentThread -> status = THREAD_BLOCKED;  // make it to sleeping state
+        currentThread -> wakingUpTick = start + ticks; // save the tick for waking up
+        list_insert_ordered (&sleep_list, &currentThread->elem, tick_less, NULL); // save current thread into sleeping list
+    }
+    ASSERT (intr_get_level () == INTR_OFF); // make sure current interrupt is turned off
+    schedule (); // stop CPU usage
+    intr_enable (); // enable interrupt
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -185,6 +196,20 @@ timer_interrupt (struct intr_frame *args UNUSED)
   /*
    * at every tick check whether some thread must wake up from sleep queue and call wake up function
    */
+    intr_disable();
+    struct list_elem *e;
+    for (e = list_begin (&sleep_list); e != list_end (&sleep_list); e = list_next (e))
+    {
+        struct thread *nearestThread = list_entry(e, struct thread, elem);
+        if (nearestThread -> wakingUpTick > ticks){
+            break;
+        }else{
+            struct list_elem *tempnext = list_remove(e);
+            e = list_prev(tempnext);
+            thread_unblock(nearestThread);
+        }
+    }
+    intr_enable();
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
@@ -256,4 +281,13 @@ real_time_delay (int64_t num, int32_t denom)
      the possibility of overflow. */
   ASSERT (denom % 1000 == 0);
   busy_wait (loops_per_tick * num / 1000 * TIMER_FREQ / (denom / 1000)); 
+}
+
+bool tick_less(const struct list_elem *a_, const struct list_elem *b_,
+               void *aux UNUSED)
+{
+    const struct value *a = list_entry (a_, struct value, elem);
+    const struct value *b = list_entry (b_, struct value, elem);
+    return a->waketick < b->waketick;
+
 }

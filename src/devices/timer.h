@@ -26,4 +26,8 @@ void timer_ndelay (int64_t nanoseconds);
 
 void timer_print_stats (void);
 
+bool tick_less(const struct list_elem *a_, const struct list_elem *b_,
+               void *aux UNUSED)
 #endif /* devices/timer.h */
+
+

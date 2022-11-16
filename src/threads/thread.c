@@ -205,6 +205,10 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
+  /* (add code)
+   * compare the priorities of the currently running thread and the newly inserted one. Yield the CPU if the newly arriving thread has higher priority
+   */
+
   return tid;
 }
 

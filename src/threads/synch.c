@@ -32,6 +32,14 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
+/* (add code)(2)
+ * used to compare the priority of threads
+ */
+static bool comparator_greater_thread_priority(const struct list_elem*, const struct list_elem*, void *);
+/* (add code)(2)
+ * used to compare the priority of threads
+ */
+static bool comparator_greater_sema_priority(const struct list_elem*, const struct list_elem*, void *);
 /* Initializes semaphore SEMA to VALUE.  A semaphore is a
    nonnegative integer along with two atomic operators for
    manipulating it:
@@ -68,15 +76,16 @@ sema_down (struct semaphore *sema)
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
-      list_push_back (&sema->waiters, &thread_current ()->elem);
+/* (add code)(2)
+   * insert thread at waiters list in order of priority
+   */
+      list_insert_ordered (&sema->waiters, &thread_current()->elem, comparator_greater_thread_priority, NULL);
       thread_block ();
     }
   sema->value--;
   intr_set_level (old_level);
 
-  /* (add code)(2)
-   * insert thread at waiters list in order of priority
-   */
+  
 }
 
 /* Down or "P" operation on a semaphore, but only if the
@@ -117,15 +126,21 @@ sema_up (struct semaphore *sema)
   ASSERT (sema != NULL);
 
   old_level = intr_disable ();
-  if (!list_empty (&sema->waiters)) 
-    thread_unblock (list_entry (list_pop_front (&sema->waiters),
-                                struct thread, elem));
+  if (!list_empty (&sema->waiters)) {
+/* (add code)(2)
+   * it is to consider the case of changing priority of threads in waiters list
+   * the thread of highest priority should wake up
+   */
+    list_sort(&(sema->waiters), comparator_greater_thread_priority, NULL);
+//    thread_unblock (list_entry (list_pop_front (&sema->waiters), struct thread, elem));
+    struct thread *target = NULL;
+    target = list_entry (list_pop_front (&sema->waiters), struct thread, elem);
+    thread_unblock (target);
+  }
   sema->value++;
   intr_set_level (old_level);
 
-  /* (add code)(2)
-   * it is to consider the case of changing priority of threads in waiters list
-   */
+  
 }
 
 static void sema_test_helper (void *sema_);
@@ -303,15 +318,18 @@ cond_wait (struct condition *cond, struct lock *lock)
   ASSERT (lock_held_by_current_thread (lock));
   
   sema_init (&waiter.semaphore, 0);
-  list_push_back (&cond->waiters, &waiter.elem);
+/* (add code)(2)
+   * insert thread at waiters list in order of priority
+   */
+  waiter.semaphore.priority = thread_current() -> priority;
+  list_insert_ordered (&cond->waiters, &(waiter.elem), comparator_greater_sema_priority, NULL);
+  
+  //list_push_back (&cond->waiters, &waiter.elem);
   lock_release (lock);
   sema_down (&waiter.semaphore);
   lock_acquire (lock);
 
-  /* (add code)(2)
-   * insert thread at waiters list in order of priority
-   */
-}
+  }
 
 /* If any threads are waiting on COND (protected by LOCK), then
    this function signals one of them to wake up from its wait.
@@ -350,4 +368,27 @@ cond_broadcast (struct condition *cond, struct lock *lock)
 
   while (!list_empty (&cond->waiters))
     cond_signal (cond, lock);
+}
+
+/* (add code)(2)
+ * used to compare priorities of threads
+ */
+static bool comparator_greater_thread_priority(const struct list_elem* a, const struct list_elem *b, void* aux UNUSED)
+{
+  const struct thread* x = list_entry(a, struct thread, elem);
+  const struct thread* y = list_entry(b, struct thread, elem);
+  ASSERT(x != NULL && y != NULL);
+  return x->priority > y->priority;
+}
+
+/*
+ * used to compare priorities of semaphore
+ */
+
+static bool comparator_greater_sema_priority(const struct list_elem* a, const struct list_elem *b, void* aux UNUSED)
+{
+  const struct semaphore_elem* x = list_entry(a, struct semaphore_elem, elem);
+  const struct semaphore_elem* y = list_entry(b, struct semaphore_elem, elem);
+  ASSERT(x != NULL && y != NULL);
+  return x->semaphore.priority > y->semaphore.priority;
 }

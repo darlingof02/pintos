@@ -73,6 +73,12 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 bool tick_less(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED);
+
+/* (add code)(2)
+ * Helper function used to compare the priority of threads
+ */
+static bool comparator_greater_thread_priority
+  (const struct list_elem *, const struct list_elem *, void *aux);
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -212,6 +218,9 @@ thread_create (const char *name, int priority,
   /* (add code)(2)
    * compare the priorities of the currently running thread and the newly inserted one. Yield the CPU if the newly arriving thread has higher priority
    */
+  if (priority > thread_current() -> priority) {
+	thread_yield();
+  } 
   
 
   return tid;
@@ -250,14 +259,20 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
-  t->status = THREAD_READY;
-  intr_set_level (old_level);
-
-  /* (add code)(2)
+/* (add code)(2)
    * when the threads is unblocked, it is inserted to ready_list in the priority order
    * use list_insert_ordered(&ready_list, &t->elem, cmp_priority, NULL)
    */
+  list_insert_ordered (&ready_list, &t->elem, comparator_greater_thread_priority, NULL);
+//  list_push_back (&ready_list, &t->elem);
+  t->status = THREAD_READY;
+
+  // ensure preemption : compare priorities of current thread and t (to be unblocked),
+  if (thread_current() != idle_thread && thread_current()->priority < t->priority )
+    thread_yield();
+  intr_set_level (old_level);
+
+  
 }
 
 /* Returns the name of the running thread. */
@@ -326,15 +341,17 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+/* (add code)(2)
+   * the current thread yields CPU and it is inserted to ready_list in priority order
+   */
+	  list_insert_ordered (&ready_list, &cur->elem, comparator_greater_thread_priority, NULL);
+
+//    list_push_back (&ready_list, &cur->elem);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
 
-  /* (add code)(2)
-   * the current thread yields CPU and it is inserted to ready_list in priority order
-   */
-}
+  }
 
 /* Invoke function 'func' on all threads, passing along 'aux'.
    This function must be called with interrupts off. */
@@ -362,6 +379,12 @@ thread_set_priority (int new_priority)
    * set priority of the current thread
    * reorder the ready_list
    */
+  if (!list_empty (&ready_list)) {
+    struct thread *next = list_entry(list_begin(&ready_list), struct thread, elem);
+    if (next != NULL && next->priority > new_priority) {
+      thread_yield();
+    }
+  }
 }
 
 /* Returns the current thread's priority. */
@@ -632,6 +655,23 @@ void sleepThread(int64_t start, int64_t ticks){
     thread_block();
     intr_enable (); // enable interrupt
 }
+/* (add code)(2)
+* A comparator function for thread priority, w.r.t ready_list element.
+* returns true iff (thread a)'s priority > (thread b)'s priority.
+*/
+static bool
+comparator_greater_thread_priority (
+    const struct list_elem *a,
+    const struct list_elem *b, void *aux UNUSED)
+{
+  struct thread *ta, *tb;
+  ASSERT (a != NULL);
+  ASSERT (b != NULL);
+  ta = list_entry (a, struct thread, elem);
+  tb = list_entry (b, struct thread, elem);
+  return ta->priority > tb->priority;
+}
+
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);

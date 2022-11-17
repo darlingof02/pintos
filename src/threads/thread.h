@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include <kernel/list.h>
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -94,6 +95,20 @@ struct thread
     struct list_elem elem;              /* List element. */
 
       int64_t wakingUpTick;
+    struct list_elem donorelem;
+
+    int basepriority;
+
+    struct thread *locker;
+
+    struct list pot_donors;
+
+    struct lock *blocked;
+
+    int nice;
+
+    int recent_cpu;
+
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
@@ -140,4 +155,7 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 void sleepThread(int64_t start, int64_t ticks);
+
+bool cmp_priority(struct list_elem *first, struct list_elem *second, void *aux);
+
 #endif /* threads/thread.h */

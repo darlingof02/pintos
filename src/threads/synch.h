@@ -13,7 +13,7 @@ struct semaphore
     /* (add code)(2)
      * priority of semaphore
      */
-    int priority;
+    // int priority;
   };
 
 void sema_init (struct semaphore *, unsigned value);

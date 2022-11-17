@@ -79,7 +79,8 @@ sema_down (struct semaphore *sema)
 /* (add code)(2)
    * insert thread at waiters list in order of priority
    */
-      list_insert_ordered (&sema->waiters, &thread_current()->elem, comparator_greater_thread_priority, NULL);
+      // list_insert_ordered (&sema->waiters, &thread_current()->elem, comparator_greater_thread_priority, NULL);
+      list_push_back (&sema->waiters, &thread_current ()->elem);
       thread_block ();
     }
   sema->value--;
@@ -321,10 +322,10 @@ cond_wait (struct condition *cond, struct lock *lock)
 /* (add code)(2)
    * insert thread at waiters list in order of priority
    */
-  waiter.semaphore.priority = thread_current() -> priority;
-  list_insert_ordered (&cond->waiters, &(waiter.elem), comparator_greater_sema_priority, NULL);
+  // waiter.semaphore.priority = thread_current() -> priority;
+  // list_insert_ordered (&cond->waiters, &(waiter.elem), comparator_greater_sema_priority, NULL);
   
-  //list_push_back (&cond->waiters, &waiter.elem);
+  list_push_back (&cond->waiters, &waiter.elem);
   lock_release (lock);
   sema_down (&waiter.semaphore);
   lock_acquire (lock);
@@ -385,10 +386,10 @@ static bool comparator_greater_thread_priority(const struct list_elem* a, const 
  * used to compare priorities of semaphore
  */
 
-static bool comparator_greater_sema_priority(const struct list_elem* a, const struct list_elem *b, void* aux UNUSED)
-{
-  const struct semaphore_elem* x = list_entry(a, struct semaphore_elem, elem);
-  const struct semaphore_elem* y = list_entry(b, struct semaphore_elem, elem);
-  ASSERT(x != NULL && y != NULL);
-  return x->semaphore.priority > y->semaphore.priority;
-}
+// static bool comparator_greater_sema_priority(const struct list_elem* a, const struct list_elem *b, void* aux UNUSED)
+// {
+//   const struct semaphore_elem* x = list_entry(a, struct semaphore_elem, elem);
+//   const struct semaphore_elem* y = list_entry(b, struct semaphore_elem, elem);
+//   ASSERT(x != NULL && y != NULL);
+//   return x->semaphore.priority > y->semaphore.priority;
+// }

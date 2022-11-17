@@ -201,7 +201,8 @@ thread_create (const char *name, int priority,
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
      member cannot be observed. */
-  old_level = intr_disable ();
+  //test code
+  // old_level = intr_disable ();
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -218,17 +219,20 @@ thread_create (const char *name, int priority,
   sf->eip = switch_entry;
   sf->ebp = 0;
 
-  intr_set_level (old_level);
+  // test code
+  // intr_set_level (old_level);
 
   /* Add to run queue. */
   thread_unblock (t);
 
-  old_level = intr_disable ();
+  // test code
+  // old_level = intr_disable ();
   if (priority > thread_current() -> priority) {
       thread_yield();
   }
 
-  intr_set_level (old_level);
+  // test code
+  // intr_set_level (old_level);
 
   return tid;
 }
@@ -378,29 +382,43 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  enum intr_level old_level;
 
-  old_level = intr_disable ();
-  if(list_empty(&thread_current()->pot_donors))
-  {
-    thread_current()->priority = new_priority; 
-    thread_current()->basepriority = new_priority;
-  }
-  else if(new_priority > thread_current()->priority)
-  {
-    thread_current()->priority = new_priority;
-    thread_current()->basepriority = new_priority;
-  }
-  else
-    thread_current()->basepriority = new_priority;
-
+  thread_current ()->priority = new_priority;
+  /* (add code)(2)
+   * set priority of the current thread
+   * reorder the ready_list
+   */
   if (!list_empty (&ready_list)) {
     struct thread *next = list_entry(list_begin(&ready_list), struct thread, elem);
     if (next != NULL && next->priority > new_priority) {
       thread_yield();
     }
   }
-  intr_set_level (old_level);
+
+  // test code
+  // enum intr_level old_level;
+
+  // old_level = intr_disable ();
+  // if(list_empty(&thread_current()->pot_donors))
+  // {
+  //   thread_current()->priority = new_priority; 
+  //   thread_current()->basepriority = new_priority;
+  // }
+  // else if(new_priority > thread_current()->priority)
+  // {
+  //   thread_current()->priority = new_priority;
+  //   thread_current()->basepriority = new_priority;
+  // }
+  // else
+  //   thread_current()->basepriority = new_priority;
+
+  // if (!list_empty (&ready_list)) {
+  //   struct thread *next = list_entry(list_begin(&ready_list), struct thread, elem);
+  //   if (next != NULL && next->priority > new_priority) {
+  //     thread_yield();
+  //   }
+  // }
+  // intr_set_level (old_level);
 }
 
 /* Returns the current thread's priority. */
@@ -528,10 +546,11 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
-  t->basepriority = priority;
-  t->locker = NULL;
-  t->blocked = NULL;
-  list_init (&t->pot_donors);
+  // test code
+  // t->basepriority = priority;
+  // t->locker = NULL;
+  // t->blocked = NULL;
+  // list_init (&t->pot_donors);
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);

@@ -212,29 +212,30 @@ lock_acquire (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
-    if(lock->holder)
-    {
-      thread_current()->locker = lock->holder;
+  //test code
+    // if(lock->holder)
+    // {
+    //   thread_current()->locker = lock->holder;
 
-      list_push_front(&lock->holder->pot_donors,&thread_current()->donorelem);
+    //   list_push_front(&lock->holder->pot_donors,&thread_current()->donorelem);
 
-      thread_current()->blocked = lock;
+    //   thread_current()->blocked = lock;
 
-      struct thread *temp = thread_current();
+    //   struct thread *temp = thread_current();
 
 
-      while(temp->locker!=NULL)
-      {
-        if(temp->priority > temp->locker->priority)
-        {
-          temp->locker->priority = temp->priority;
-          temp = temp->locker;
-        }
+    //   while(temp->locker!=NULL)
+    //   {
+    //     if(temp->priority > temp->locker->priority)
+    //     {
+    //       temp->locker->priority = temp->priority;
+    //       temp = temp->locker;
+    //     }
 
-      }
-    }
-    else
-      thread_current()->locker = NULL;
+    //   }
+    // }
+    // else
+    //   thread_current()->locker = NULL;
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
 }
@@ -253,8 +254,8 @@ lock_try_acquire (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (!lock_held_by_current_thread (lock));
 
-  success = sema_try_down (&lock->semaphore);
-  if (success)
+  // success = sema_try_down (&lock->semaphore);
+  // if (success)
     lock->holder = thread_current ();
   return success;
 }
@@ -272,41 +273,42 @@ lock_release (struct lock *lock)
 
   lock->holder = NULL;
   sema_up (&lock->semaphore);
-    if(list_empty(&thread_current()->pot_donors))
-      thread_set_priority(thread_current()->basepriority);
-    else
-    {
-      struct list_elem *e;
+  //test code
+    // if(list_empty(&thread_current()->pot_donors))
+    //   thread_set_priority(thread_current()->basepriority);
+    // else
+    // {
+    //   struct list_elem *e;
 
-      for (e = list_begin (&thread_current()->pot_donors); e != list_end (&thread_current()->pot_donors);
-           e = list_next (e))
-      {
+    //   for (e = list_begin (&thread_current()->pot_donors); e != list_end (&thread_current()->pot_donors);
+    //        e = list_next (e))
+    //   {
 
-        struct thread *f = list_entry (e, struct thread, donorelem);
-        if(f->blocked == lock)
-        {
-          list_remove(e);
-          f->blocked = NULL;
+    //     struct thread *f = list_entry (e, struct thread, donorelem);
+    //     if(f->blocked == lock)
+    //     {
+    //       list_remove(e);
+    //       f->blocked = NULL;
 
-        }
-      }
+    //     }
+    //   }
 
-      if(!list_empty(&thread_current()->pot_donors))
-      {
-        struct list_elem *max_donor = list_max(&thread_current()->pot_donors, cmp_priority, NULL);
-        struct thread *max_donor_thread = list_entry(max_donor, struct thread, donorelem);
+    //   if(!list_empty(&thread_current()->pot_donors))
+    //   {
+    //     struct list_elem *max_donor = list_max(&thread_current()->pot_donors, cmp_priority, NULL);
+    //     struct thread *max_donor_thread = list_entry(max_donor, struct thread, donorelem);
 
-        if(thread_current()->basepriority > max_donor_thread->priority)
-          thread_set_priority(thread_current()->basepriority);
-        else
-        {
-          thread_current()->priority = max_donor_thread->priority;
-          thread_yield();
-        }
-      }
-      else
-        thread_set_priority(thread_current()->basepriority);
-    }
+    //     if(thread_current()->basepriority > max_donor_thread->priority)
+    //       thread_set_priority(thread_current()->basepriority);
+    //     else
+    //     {
+    //       thread_current()->priority = max_donor_thread->priority;
+    //       thread_yield();
+    //     }
+    //   }
+    //   else
+    //     thread_set_priority(thread_current()->basepriority);
+    // }
 }
 
 /* Returns true if the current thread holds LOCK, false
@@ -392,7 +394,8 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED)
 
   if (!list_empty (&cond->waiters)) 
   {
-    list_sort (&cond->waiters, cmp_cond_priority, NULL);
+    //test code
+    // list_sort (&cond->waiters, cmp_cond_priority, NULL);
     sema_up (&list_entry (list_pop_front (&cond->waiters),
                           struct semaphore_elem, elem)->semaphore);
   /* (add code)(2)

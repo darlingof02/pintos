@@ -95,19 +95,20 @@ struct thread
     struct list_elem elem;              /* List element. */
 
       int64_t wakingUpTick;
-    struct list_elem donorelem;
+   //  test code
+   //  struct list_elem donorelem;
 
-    int basepriority;
+   //  int basepriority;
 
-    struct thread *locker;
+   //  struct thread *locker;
 
-    struct list pot_donors;
+   //  struct list pot_donors;
 
-    struct lock *blocked;
+   //  struct lock *blocked;
 
-    int nice;
+   //  int nice;
 
-    int recent_cpu;
+   //  int recent_cpu;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

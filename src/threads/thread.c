@@ -102,7 +102,7 @@ thread_init (void)
   list_init (&all_list);
   /*(add code)(1)
    * add the code to initialize the sleep queue data structure
-   */
+   */  
     list_init (&sleep_list);
     
   /* Set up a thread structure for the running thread. */
@@ -185,6 +185,7 @@ thread_create (const char *name, int priority,
   struct switch_entry_frame *ef;
   struct switch_threads_frame *sf;
   tid_t tid;
+
   enum intr_level old_level;
 
   ASSERT (function != NULL);
@@ -198,13 +199,8 @@ thread_create (const char *name, int priority,
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
 
-  /* Prepare thread for first run by initializing its stack.
-     Do this atomically so intermediate values for the 'stack' 
-     member cannot be observed. */
-  //test code
-  // old_level = intr_disable ();
-
-  /* Stack frame for kernel_thread(). */
+  old_level = intr_disable ();
+  /* Stack frame for kernel_thread(). */  
   kf = alloc_frame (t, sizeof *kf);
   kf->eip = NULL;
   kf->function = function;
@@ -218,21 +214,18 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
-
-  // test code
-  // intr_set_level (old_level);
-
+  intr_set_level (old_level);
   /* Add to run queue. */
   thread_unblock (t);
 
-  // test code
-  // old_level = intr_disable ();
+  /* (add code)(2)
+   * compare the priorities of the currently running thread and the newly inserted one. Yield the CPU if the newly arriving thread has higher priority
+   */
+  old_level = intr_disable();
   if (priority > thread_current() -> priority) {
-      thread_yield();
-  }
-
-  // test code
-  // intr_set_level (old_level);
+	thread_yield();
+  } 
+  intr_set_level(old_level);
 
   return tid;
 }
@@ -278,6 +271,9 @@ thread_unblock (struct thread *t)
 //  list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
 
+  // ensure preemption : compare priorities of current thread and t (to be unblocked),
+  if (thread_current() != idle_thread && thread_current()->priority < t->priority )
+    thread_yield();
   intr_set_level (old_level);
 
   
@@ -327,7 +323,7 @@ thread_exit (void)
   process_exit ();
 #endif
 
-  /* Remove thread from all threads list, set our status to dying,
+  /* Recd ..move thread from all threads list, set our status to dying,
      and schedule another process.  That process will destroy us
      when it calls thread_schedule_tail(). */
   intr_disable ();
@@ -348,7 +344,7 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread)
+  if (cur != idle_thread) 
 /* (add code)(2)
    * the current thread yields CPU and it is inserted to ready_list in priority order
    */
@@ -382,7 +378,6 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-
   thread_current ()->priority = new_priority;
   /* (add code)(2)
    * set priority of the current thread
@@ -394,31 +389,6 @@ thread_set_priority (int new_priority)
       thread_yield();
     }
   }
-
-  // test code
-  // enum intr_level old_level;
-
-  // old_level = intr_disable ();
-  // if(list_empty(&thread_current()->pot_donors))
-  // {
-  //   thread_current()->priority = new_priority; 
-  //   thread_current()->basepriority = new_priority;
-  // }
-  // else if(new_priority > thread_current()->priority)
-  // {
-  //   thread_current()->priority = new_priority;
-  //   thread_current()->basepriority = new_priority;
-  // }
-  // else
-  //   thread_current()->basepriority = new_priority;
-
-  // if (!list_empty (&ready_list)) {
-  //   struct thread *next = list_entry(list_begin(&ready_list), struct thread, elem);
-  //   if (next != NULL && next->priority > new_priority) {
-  //     thread_yield();
-  //   }
-  // }
-  // intr_set_level (old_level);
 }
 
 /* Returns the current thread's priority. */
@@ -546,11 +516,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
-  // test code
-  // t->basepriority = priority;
-  // t->locker = NULL;
-  // t->blocked = NULL;
-  // list_init (&t->pot_donors);
+
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
@@ -678,8 +644,8 @@ bool tick_less(const struct list_elem *a, const struct list_elem *b,
     return threadA->wakingUpTick < threadB->wakingUpTick;
 
 }
-/* (add code)
- * put current thread in sleep_list
+/* (add code) 
+ * put current thread in sleep_list 
  */
 void sleepThread(int64_t start, int64_t ticks){
     struct thread *currentThread = thread_current (); //get current thread
@@ -714,11 +680,3 @@ comparator_greater_thread_priority (
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
-bool cmp_priority(struct list_elem *first, struct list_elem *second, void *aux)
-{
-  struct thread *fthread = list_entry (first, struct thread, elem);
-  struct thread *sthread = list_entry (second, struct thread, elem);
-
-  return fthread->priority > sthread->priority;
-
-}

@@ -80,7 +80,7 @@ sema_down (struct semaphore *sema)
    * insert thread at waiters list in order of priority
    */
       // list_insert_ordered (&sema->waiters, &thread_current()->elem, comparator_greater_thread_priority, NULL);
-      list_push_back (&sema->waiters, &thread_current ()->elem);
+      
       thread_block ();
     }
   sema->value--;
@@ -141,6 +141,7 @@ sema_up (struct semaphore *sema)
   sema->value++;
   intr_set_level (old_level);
 
+  thread_yield();
   
 }
 

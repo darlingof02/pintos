@@ -270,7 +270,7 @@ thread_unblock (struct thread *t)
   list_insert_ordered (&ready_list, &t->elem, comparator_greater_thread_priority, NULL);
 //  list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
-
+  // intr_set_level (old_level);
 /* cannot switch to running state from blocked state
   // ensure preemption : compare priorities of current thread and t (to be unblocked),
   if (thread_current() != idle_thread && thread_current()->priority < t->priority )

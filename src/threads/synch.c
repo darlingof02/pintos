@@ -79,10 +79,10 @@ sema_down (struct semaphore *sema)
 /* (add code)(2)
    * insert thread at waiters list in order of priority
    */
-      list_insert_ordered (&sema->waiters, &thread_current()->elem, comparator_greater_thread_priority, NULL);
+      // list_insert_ordered (&sema->waiters, &thread_current()->elem, comparator_greater_thread_priority, NULL);
       
-      // list_push_back (&sema->waiters, &thread_current ()->elem);
-      // thread_block ();
+      list_push_back (&sema->waiters, &thread_current ()->elem);
+      thread_block ();
     }
   sema->value--;
   intr_set_level (old_level);
@@ -323,13 +323,13 @@ cond_wait (struct condition *cond, struct lock *lock)
   sema_init (&waiter.semaphore, 0);
 /* (add code)(2)
    * insert thread at waiters list in order of priority
-   */
+*/
   // waiter.semaphore.priority = thread_current() -> priority;
   // list_insert_ordered (&cond->waiters, &(waiter.elem), comparator_greater_sema_priority, NULL);
   
   list_push_back (&cond->waiters, &waiter.elem);
   lock_release (lock);
-  sema_down (&waiter.semaphore);
+  sema_down (&waiter.semaphore); //block
   lock_acquire (lock);
 
   }

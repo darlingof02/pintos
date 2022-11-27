@@ -39,7 +39,7 @@ static bool comparator_greater_thread_priority(const struct list_elem*, const st
 /* (add code)(2)
  * used to compare the priority of threads
  */
-static bool comparator_greater_sema_priority(const struct list_elem*, const struct list_elem*, void *);
+static bool comparator_greater_lock_priority(const struct list_elem* a, const struct list_elem *b, void* aux UNUSED);
 /*
  * (add code)(2)
  * used to compare the priority of condition waiter
@@ -222,8 +222,29 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
+  struct thread* t = thread_current();
+  if (lock->holder != NULL) { // no holder for required lock
+    lock->lock_priority = t->priority;
+  }
+
+  // nested donation
+  struct lock *cur_lock = lock;
+  while (cur_lock->holder != NULL && cur_lock->holder->priority < t->priority) { //donation is needed
+
+    cur_lock->lock_priority = cur_lock->lock_priority < t->priority ? t->priority : cur_lock->lock_priority; //keep the priority of the lock
+    cur_lock->holder->priority = t->priority; //donation
+    t= cur_lock->holder;
+    cur_lock = t->wait_lock;
+    if (cur_lock == NULL) break;
+  }
+
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
+
+  lock->holder->wait_lock = NULL;
+  list_push_back (&lock->holder->locks, &lock->lockelem);
+  list_sort(&lock->holder->locks, comparator_greater_lock_priority, NULL);
+  
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -257,8 +278,35 @@ lock_release (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
 
+  
+
   lock->holder = NULL;
   sema_up (&lock->semaphore);
+
+  struct thread *t = thread_current();
+  list_remove(&lock->lockelem);
+  if (list_empty(&t->locks)) {
+    t->priority = t->prepriority;
+  }
+  else {
+    int next_priority = list_entry(list_front(&t->locks), struct lock, lockelem)->lock_priority;
+    if (next_priority > t->prepriority) {
+      t->priority = next_priority;
+    }
+    else {
+      t->priority = t->prepriority; 
+    }
+    
+  }
+
+  thread_yield();
+
+  // if (!list_empty(&ready_list)) {
+  //     struct thread *next_thread = list_entry(list_begin(&ready_list), struct thread, elem);
+  //     if (next_thread != NULL && next_thread -> priority > t->priority) {
+  //       thread_yield();
+  //     }
+  // }
 }
 
 /* Returns true if the current thread holds LOCK, false
@@ -399,10 +447,15 @@ static bool comparator_greater_condition_priority(const struct list_elem* a, con
   const struct thread* t2 = list_entry(list_front(&y->semaphore.waiters), struct thread, elem);
 
   return t1->priority > t2->priority;
+}
 
+static bool comparator_greater_lock_priority(const struct list_elem* a, const struct list_elem *b, void* aux UNUSED)
+{
+  const struct lock* x = list_entry (a, struct lock, lockelem);
+  const struct lock* y = list_entry (b, struct lock, lockelem);
+  ASSERT(x != NULL && y != NULL);
 
-
-
+  return x->lock_priority > y->lock_priority;
 }
 
 /*

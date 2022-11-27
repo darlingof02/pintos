@@ -103,13 +103,14 @@ thread_init (void)
   /*(add code)(1)
    * add the code to initialize the sleep queue data structure
    */  
-    list_init (&sleep_list);
+  list_init (&sleep_list);
     
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+  
 
   
 }
@@ -380,7 +381,14 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  struct thread* t = thread_current();
+  if (t->priority == t->prepriority) { // no donors 
+    t->prepriority = new_priority;
+    t->priority = new_priority;
+  }
+  else {
+    t->prepriority = new_priority;
+  }
   /* (add code)(2)
    * set priority of the current thread
    * reorder the ready_list
@@ -518,10 +526,19 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+  //for donation
+  t->prepriority = priority;
+  list_init(&t->locks);
+  t->wait_lock = NULL;
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
+}
+
+static void
+thread_donate(struct thread* t, int priority) {
+
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

@@ -94,7 +94,12 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
-      int64_t wakingUpTick;
+    int64_t wakingUpTick;
+
+   // for donation
+    int prepriority;
+    struct lock *wait_lock;
+    struct list locks;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
@@ -141,4 +146,7 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 void sleepThread(int64_t start, int64_t ticks);
+
+//for donation
+// static struct list ready_list;
 #endif /* threads/thread.h */

@@ -327,13 +327,15 @@ cond_wait (struct condition *cond, struct lock *lock)
 */
   // waiter.semaphore.priority = thread_current() -> priority;
   
-  // list_insert_ordered (&cond->waiters, &waiter.elem, comparator_greater_condition_priority, NULL);
+
   list_push_back (&cond->waiters, &waiter.elem);
-  // intr_set_level (old_level);
+  // list_sort(&cond->waiters, comparator_greater_condition_priority, NULL);
+  
   lock_release (lock);
   sema_down (&waiter.semaphore); //block
+  // list_insert_ordered (&cond->waiters, &waiter.elem, comparator_greater_condition_priority, NULL);
   lock_acquire (lock);
-
+  // intr_set_level (old_level);
   }
 
 /* If any threads are waiting on COND (protected by LOCK), then

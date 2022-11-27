@@ -223,18 +223,20 @@ lock_acquire (struct lock *lock)
   ASSERT (!lock_held_by_current_thread (lock));
 
   struct thread* t = thread_current();
-  if (lock->holder != NULL) { // no holder for required lock
+  t->wait_lock = lock;
+  if (lock->holder == NULL) { // no holder for required lock
     lock->lock_priority = t->priority;
   }
 
   // nested donation
   struct lock *cur_lock = lock;
   while (cur_lock->holder != NULL && cur_lock->holder->priority < t->priority) { //donation is needed
-
-    cur_lock->lock_priority = cur_lock->lock_priority < t->priority ? t->priority : cur_lock->lock_priority; //keep the priority of the lock
     cur_lock->holder->priority = t->priority; //donation
-    t= cur_lock->holder;
-    cur_lock = t->wait_lock;
+
+    cur_lock->lock_priority = (cur_lock->lock_priority < t->priority) ? t->priority : cur_lock->lock_priority; //keep the priority of the lock
+    
+    // t= cur_lock->holder;
+    cur_lock = cur_lock->holder->wait_lock;
     if (cur_lock == NULL) break;
   }
 
@@ -242,8 +244,9 @@ lock_acquire (struct lock *lock)
   lock->holder = thread_current ();
 
   lock->holder->wait_lock = NULL;
-  list_push_back (&lock->holder->locks, &lock->lockelem);
-  list_sort(&lock->holder->locks, comparator_greater_lock_priority, NULL);
+  list_insert_ordered(&(lock->holder->locks), &(lock->lockelem),comparator_greater_lock_priority, NULL);
+  // list_push_back (&lock->holder->locks, &lock->lockelem);
+  // list_sort(&lock->holder->locks, comparator_greater_lock_priority, NULL);
   
 }
 
@@ -289,17 +292,21 @@ lock_release (struct lock *lock)
     t->priority = t->prepriority;
   }
   else {
-    int next_priority = list_entry(list_front(&t->locks), struct lock, lockelem)->lock_priority;
-    if (next_priority > t->prepriority) {
+    // list_sort(&(t->locks), comparator_greater_lock_priority, NULL);
+    int next_priority = list_entry(list_front(&(t->locks)), struct lock, lockelem)->lock_priority;
+    // if (next_priority > t->prepriority) {
       t->priority = next_priority;
-    }
-    else {
-      t->priority = t->prepriority; 
-    }
+    // }
+    // else {
+      // t->priority = t->prepriority; 
+    // }
     
   }
 
-  thread_yield();
+  thread_priority_donate(t, t->priority);
+
+  // thread_yield();
+
 
   // if (!list_empty(&ready_list)) {
   //     struct thread *next_thread = list_entry(list_begin(&ready_list), struct thread, elem);

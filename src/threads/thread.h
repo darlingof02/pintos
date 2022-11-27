@@ -146,7 +146,10 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 void sleepThread(int64_t start, int64_t ticks);
+void thread_priority_donate(struct thread *target, int new_priority);
 
 //for donation
 // static struct list ready_list;
 #endif /* threads/thread.h */
+
+

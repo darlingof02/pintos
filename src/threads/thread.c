@@ -73,6 +73,7 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 bool tick_less(const struct list_elem *a_, const struct list_elem *b_, void *aux UNUSED);
+void thread_priority_donate(struct thread *target, int new_priority);
 
 /* (add code)(2)
  * Helper function used to compare the priority of threads
@@ -381,6 +382,8 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
+  enum intr_level old_level;
+  old_level = intr_disable ();
   struct thread* t = thread_current();
   if (t->priority == t->prepriority) { // no donors 
     t->prepriority = new_priority;
@@ -399,6 +402,7 @@ thread_set_priority (int new_priority)
       thread_yield();
     }
   }
+  intr_set_level (old_level);
 }
 
 /* Returns the current thread's priority. */
@@ -536,8 +540,20 @@ init_thread (struct thread *t, const char *name, int priority)
   intr_set_level (old_level);
 }
 
-static void
-thread_donate(struct thread* t, int priority) {
+void
+thread_priority_donate(struct thread *target, int new_priority)
+{
+  // donation : change only current priority
+  target->priority = new_priority;
+
+  // if current thread gets its priority decreased, then yield
+  // (foremost entry in ready_list shall have the highest priority)
+  if (target == thread_current() && !list_empty (&ready_list)) {
+    struct thread *next = list_entry(list_begin(&ready_list), struct thread, elem);
+    if (next != NULL && next->priority > new_priority) {
+      thread_yield();
+    }
+  }
 
 }
 

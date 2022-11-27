@@ -25,8 +25,8 @@ struct lock
     struct semaphore semaphore; /* Binary semaphore controlling access. */
 
     //for donation
-    struct list_elem lockelem;
-    int lock_priority;
+    struct list_elem lockelem; //point to the previous and next lockelem in a list
+    int lock_priority; //denote the highest priority of acquring threads
   };
 
 void lock_init (struct lock *);

@@ -94,12 +94,22 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
-    int64_t wakingUpTick;
+    struct list_elem donorelem;
 
-   // for donation
-    int prepriority;
-    struct lock *wait_lock;
-    struct list locks;
+    int64_t waketick;
+
+    int basepriority;
+
+    struct thread *locker;
+
+    struct list pot_donors;
+
+    struct lock *blocked;
+
+    int nice;
+
+    int recent_cpu;
+
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
@@ -113,6 +123,7 @@ struct thread
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
+int load_avg;
 
 void thread_init (void);
 void thread_start (void);
@@ -145,11 +156,8 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
-void sleepThread(int64_t start, int64_t ticks);
-void thread_priority_donate(struct thread *target, int new_priority);
+bool cmp_waketick(struct list_elem *first, struct list_elem *second, void *aux);
 
-//for donation
-// static struct list ready_list;
+bool cmp_priority(struct list_elem *first, struct list_elem *second, void *aux);
+
 #endif /* threads/thread.h */
-
-

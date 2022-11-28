@@ -100,14 +100,6 @@ timer_sleep (int64_t ticks)
 //  while (timer_elapsed (start) < ticks)
 //    thread_yield ();
     sleepThread(start,ticks);
-//    struct thread *currentThread = thread_current (); //get current thread
-//    ASSERT (!intr_context ()); //make sure it is not external inturrupt
-//    intr_disable (); //disable current interrupt
-//    //currentThread -> status = THREAD_BLOCKED;  // make it to sleeping state
-//    currentThread -> wakingUpTick = start + ticks; // save the tick for waking up
-//    list_insert_ordered (&sleep_list, &currentThread->elem, tick_less, NULL); // save current thread into sleeping list
-//    thread_block();
-//    intr_enable (); // enable interrupt
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be

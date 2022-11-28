@@ -144,7 +144,6 @@ thread_tick (void)
     {
       t->recent_cpu = addint(t->recent_cpu, 1);
     }
-
     if(timer_ticks() % 100 == 0)
     {
       struct list_elem *e;

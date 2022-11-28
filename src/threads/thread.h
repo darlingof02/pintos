@@ -94,20 +94,17 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
-    struct list_elem donorelem;
+int64_t waketick;
 
-    int64_t waketick;
+   // for donation
+    int prepriority;
+    struct list_elem candidateelem;
+    struct thread *waiting_lock_holder;
+    struct list candidate_donating_threads;
+    struct lock *waiting_lock;
 
-    int basepriority;
-
-    struct thread *locker;
-
-    struct list pot_donors;
-
-    struct lock *blocked;
-
+   // for advanced scheduler
     int nice;
-
     int recent_cpu;
 
 #ifdef USERPROG
@@ -158,6 +155,6 @@ int thread_get_load_avg (void);
 
 bool cmp_waketick(struct list_elem *first, struct list_elem *second, void *aux);
 
-bool cmp_priority(struct list_elem *first, struct list_elem *second, void *aux);
+bool thread_priority_comparator(struct list_elem *first, struct list_elem *second, void *aux);
 
 #endif /* threads/thread.h */

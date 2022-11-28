@@ -291,7 +291,7 @@ thread_unblock (struct thread *t)
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
   list_push_back (&ready_list, &t->elem);
-  list_sort (&ready_list, cmp_priority, NULL);
+  list_sort (&ready_list, thread_priority_comparator, NULL);
   t->status = THREAD_READY;
 
   intr_set_level (old_level);
@@ -367,7 +367,7 @@ thread_yield (void)
   if (cur != idle_thread)
   {
     list_push_back (&ready_list, &cur->elem);
-    list_sort (&ready_list, cmp_priority, NULL);
+    list_sort (&ready_list, thread_priority_comparator, NULL);
   }
   cur->status = THREAD_READY;
   schedule ();
@@ -398,18 +398,18 @@ thread_set_priority (int new_priority)
   enum intr_level old_level;
 
   old_level = intr_disable ();
-  if(list_empty(&thread_current()->pot_donors))
+  if(list_empty(&thread_current()->candidate_donating_threads))
   {
     thread_current()->priority = new_priority; 
-    thread_current()->basepriority = new_priority;
+    thread_current()->prepriority = new_priority;
   }
   else if(new_priority > thread_current()->priority)
   {
     thread_current()->priority = new_priority;
-    thread_current()->basepriority = new_priority;
+    thread_current()->prepriority = new_priority;
   }
   else
-    thread_current()->basepriority = new_priority;
+    thread_current()->prepriority = new_priority;
 
   if(!list_empty(&ready_list))
   {
@@ -556,10 +556,10 @@ init_thread (struct thread *t, const char *name, int priority)
   else
     t->priority = priority;
   t->magic = THREAD_MAGIC;
-  t->basepriority = priority;
-  t->locker = NULL;
-  t->blocked = NULL;
-  list_init (&t->pot_donors);
+  t->prepriority = priority;
+  t->waiting_lock_holder = NULL;
+  t->waiting_lock = NULL;
+  list_init (&t->candidate_donating_threads);
   list_push_back (&all_list, &t->allelem);
 }
 
@@ -686,7 +686,7 @@ bool cmp_waketick(struct list_elem *first, struct list_elem *second, void *aux)
 
 }
 
-bool cmp_priority(struct list_elem *first, struct list_elem *second, void *aux)
+bool thread_priority_comparator(struct list_elem *first, struct list_elem *second, void *aux)
 {
   struct thread *fthread = list_entry (first, struct thread, elem);
   struct thread *sthread = list_entry (second, struct thread, elem);

@@ -396,27 +396,25 @@ void
 thread_set_priority (int new_priority) 
 {
   enum intr_level old_level;
+  struct thread * cur = thread_current();
 
   old_level = intr_disable ();
-  if(list_empty(&thread_current()->candidate_donating_threads))
-  {
-    thread_current()->priority = new_priority; 
-    thread_current()->prepriority = new_priority;
+  if(list_empty(&cur->candidate_donating_threads)) {
+    cur->priority = new_priority; 
+    cur->prepriority = new_priority;
   }
-  else if(new_priority > thread_current()->priority)
-  {
-    thread_current()->priority = new_priority;
-    thread_current()->prepriority = new_priority;
+  else if(new_priority > cur->priority){
+    cur->priority = new_priority;
+    cur->prepriority = new_priority;
   }
   else
-    thread_current()->prepriority = new_priority;
+    cur->prepriority = new_priority;
 
-  if(!list_empty(&ready_list))
-  {
+  if(!list_empty(&ready_list)) {
     struct list_elem *front = list_front(&ready_list);
-    struct thread *fthread = list_entry (front, struct thread, elem);
+    struct thread *front_thread = list_entry (front, struct thread, elem);
 
-    if(fthread->priority > thread_current ()->priority)
+    if(front_thread->priority > cur->priority)
       thread_yield();
   }
   intr_set_level (old_level);

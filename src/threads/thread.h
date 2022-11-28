@@ -94,7 +94,8 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
-int64_t waketick;
+int64_t wakingUpTick;
+
 
    // for donation
     int prepriority;
@@ -153,8 +154,8 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
-bool cmp_waketick(struct list_elem *first, struct list_elem *second, void *aux);
 
 bool thread_priority_comparator(struct list_elem *first, struct list_elem *second, void *aux);
+void sleepThread(int64_t start, int64_t ticks);
 
 #endif /* threads/thread.h */

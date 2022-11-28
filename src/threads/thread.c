@@ -61,7 +61,7 @@ static unsigned thread_ticks;   /* # of timer ticks since last yield. */
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
 
-extern struct list sleep_list;
+struct list sleep_list;
 
 static void kernel_thread (thread_func *, void *aux);
 
@@ -74,6 +74,7 @@ static void *alloc_frame (struct thread *, size_t size);
 static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
+bool tick_less(const struct list_elem *a, const struct list_elem *b,void *aux UNUSED);
 
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
@@ -96,7 +97,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
-
+  list_init (&sleep_list);
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
@@ -675,14 +676,6 @@ allocate_tid (void)
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
-bool cmp_waketick(struct list_elem *first, struct list_elem *second, void *aux)
-{
-  struct thread *fthread = list_entry (first, struct thread, elem);
-  struct thread *sthread = list_entry (second, struct thread, elem);
-
-  return fthread->waketick < sthread->waketick;
-
-}
 
 bool thread_priority_comparator(struct list_elem *first, struct list_elem *second, void *aux)
 {
@@ -691,4 +684,32 @@ bool thread_priority_comparator(struct list_elem *first, struct list_elem *secon
 
   return fthread->priority > sthread->priority;
 
+}
+
+/* (add code)
+ * comparator
+ * compare the wakingUpTick between two threads
+ */
+bool tick_less(const struct list_elem *a, const struct list_elem *b,
+               void *aux UNUSED)
+{
+    struct thread *threadA = list_entry (a, struct thread, elem);
+    struct thread *threadB = list_entry (b, struct thread, elem);
+    return threadA->wakingUpTick < threadB->wakingUpTick;
+
+}
+/* (add code)
+ * put current thread in sleep_list
+ */
+void sleepThread(int64_t start, int64_t ticks){
+    struct thread *currentThread = thread_current (); //get current thread
+    ASSERT (!intr_context ()); //make sure it is not external inturrupt
+    intr_disable (); //disable current interrupt
+    if (currentThread != idle_thread){
+    //currentThread -> status = THREAD_BLOCKED;  // make it to sleeping state
+    currentThread -> wakingUpTick = start + ticks; // save the tick for waking up
+    list_insert_ordered (&sleep_list, &currentThread->elem, tick_less, NULL); // save current thread into sleeping list
+    }
+    thread_block();
+    intr_enable (); // enable interrupt
 }

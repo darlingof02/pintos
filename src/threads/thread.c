@@ -11,7 +11,8 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
-#include "fxpt.h"
+#include "fixpoint.h"
+
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -141,7 +142,7 @@ thread_tick (void)
   {
     if(strcmp(t->name,"idle")!=0)
     {
-      t->recent_cpu = addin(t->recent_cpu, 1);
+      t->recent_cpu = addint(t->recent_cpu, 1);
     }
 
     if(timer_ticks() % 100 == 0)
@@ -149,15 +150,15 @@ thread_tick (void)
       struct list_elem *e;
       int temp, i=0;
 
-      load_avg = addfx(divin(mulin(load_avg, 59), 60), divin(tofxpt(list_size(&ready_list) + (strcmp(running_thread()->name,"idle")==0?0:1)), 60));
+      load_avg = addfxpt(divint(mulint(load_avg, 59), 60), divint(fxpt(list_size(&ready_list) + (strcmp(running_thread()->name,"idle")==0?0:1)), 60));
 
-      temp = divfx(mulin(load_avg, 2),addin(mulin(load_avg, 2), 1));
+      temp = divfxpt(mulint(load_avg, 2),addint(mulint(load_avg, 2), 1));
 
       for (e = list_begin (&all_list); e != list_end (&all_list);
          e = list_next (e))
       {
         struct thread *f = list_entry (e, struct thread, allelem);
-        f->recent_cpu = addin(mulfx(temp, f->recent_cpu),f->nice);
+        f->recent_cpu = addint(mulfxpt(temp, f->recent_cpu),f->nice);
       }
     }
 
@@ -168,7 +169,7 @@ thread_tick (void)
          e = list_next (e))
       {
         struct thread *f = list_entry (e, struct thread, allelem);
-        f->priority = PRI_MAX - tointround(divin(f->recent_cpu,4)) - (f->nice * 2);
+        f->priority = PRI_MAX - round(divint(f->recent_cpu,4)) - (f->nice * 2);
       }
     }
   }
@@ -447,7 +448,7 @@ int
 thread_get_load_avg (void) 
 {
   /* Not yet implemented. */
-  return tointround(mulin(load_avg,100));
+  return round(mulint(load_avg,100));
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
@@ -455,7 +456,7 @@ int
 thread_get_recent_cpu (void) 
 {
   /* Not yet implemented. */
-  return tointround(mulin(thread_current()->recent_cpu,100)) ;
+  return round(mulint(thread_current()->recent_cpu,100)) ;
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -546,9 +547,9 @@ init_thread (struct thread *t, const char *name, int priority)
     if(strcmp(t->name,"main")==0)
       t->recent_cpu = 0;
     else
-      t->recent_cpu = divin(thread_get_recent_cpu(),100);
+      t->recent_cpu = divint(thread_get_recent_cpu(),100);
 
-    priority = PRI_MAX - tointround(divin(t->recent_cpu,4)) - (t->nice * 2);
+    priority = PRI_MAX - round(divint(t->recent_cpu,4)) - (t->nice * 2);
       
   }
   else

@@ -11,7 +11,8 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
-#include "fixpoint.h"
+#include "threads/fixpoint.h"
+#include "fixpoint.c"
 
 #ifdef USERPROG
 #include "userprog/process.h"
@@ -139,39 +140,36 @@ thread_tick (void)
   else
     kernel_ticks++;
 
-  if(thread_mlfqs)
-  {
-    if(strcmp(t->name,"idle")!=0)
-    {
+  if(thread_mlfqs) {
+    if(strcmp(t->name,"idle")) 
       t->recent_cpu = addint(t->recent_cpu, 1);
-    }
-    if(timer_ticks() % 100 == 0)
-    {
-      struct list_elem *e;
-      int temp, i=0;
 
-      load_avg = addfxpt(divint(mulint(load_avg, 59), 60), divint(fxpt(list_size(&ready_list) + (strcmp(running_thread()->name,"idle")==0?0:1)), 60));
 
-      temp = divfxpt(mulint(load_avg, 2),addint(mulint(load_avg, 2), 1));
-
-      for (e = list_begin (&all_list); e != list_end (&all_list);
-         e = list_next (e))
-      {
-        struct thread *f = list_entry (e, struct thread, allelem);
-        f->recent_cpu = addint(mulfxpt(temp, f->recent_cpu),f->nice);
-      }
-    }
-
-    if(timer_ticks() % 4 == 0)
-    {
-      struct list_elem *e;
-      for (e = list_begin (&all_list); e != list_end (&all_list);
-         e = list_next (e))
-      {
+    if(!(timer_ticks()%4)) {
+      struct list_elem *e = list_begin (&all_list);
+      while (e != list_end (&all_list)) {
         struct thread *f = list_entry (e, struct thread, allelem);
         f->priority = PRI_MAX - round(divint(f->recent_cpu,4)) - (f->nice * 2);
+        e = list_next (e);
       }
     }
+
+    if(!(timer_ticks() % 100)) {
+
+      load_avg = addfxpt(divint(mulint(load_avg, 59), 60), divint(fxpt(list_size(&ready_list)+(strcmp(running_thread()->name,"idle")==0?0:1)), 60));
+
+      int decay = divfxpt(mulint(load_avg, 2),addint(mulint(load_avg, 2), 1));
+
+      // update recent_cpu of all threads
+      struct list_elem *e = list_begin (&all_list);
+      while(e != list_end (&all_list)) {
+        struct thread *f = list_entry (e, struct thread, allelem);
+        f->recent_cpu = addint(mulfxpt(decay, f->recent_cpu),f->nice);
+        e = list_next (e);
+      }
+    }
+
+
   }
 
   /* Enforce preemption. */
@@ -542,18 +540,14 @@ init_thread (struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
-  if(thread_mlfqs)
-  {
-    if(strcmp(t->name,"main")==0)
-      t->recent_cpu = 0;
-    else
-      t->recent_cpu = divint(thread_get_recent_cpu(),100);
-
-    priority = PRI_MAX - round(divint(t->recent_cpu,4)) - (t->nice * 2);
-      
+  // add thread_mlfqs scheduling
+  if(thread_mlfqs) {
+    t->recent_cpu = !strcmp(t->name,"main")?0:divint(thread_get_recent_cpu(),100);
+    priority = PRI_MAX - floor(divint(t->recent_cpu,4)) - (t->nice * 2);
   }
   else
     t->priority = priority;
+
   t->magic = THREAD_MAGIC;
   t->prepriority = priority;
   t->waiting_lock_holder = NULL;

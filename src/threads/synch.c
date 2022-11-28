@@ -273,8 +273,7 @@ lock_release (struct lock *lock)
 
   sema_up (&lock->semaphore);
   
-  if(!thread_mlfqs)
-  {
+  if(!thread_mlfqs) {
     if(list_empty(&cur_thread->candidate_donating_threads))
       thread_set_priority(cur_thread->prepriority);
     else {
@@ -289,20 +288,17 @@ lock_release (struct lock *lock)
         candidate_thread_elem = list_next (candidate_thread_elem);
       }
 
-      if(!list_empty(&cur_thread->candidate_donating_threads))
-      {
-        struct list_elem *max_donor = list_max(&cur_thread->candidate_donating_threads, thread_priority_comparator, NULL);
-        struct thread *max_donor_thread = list_entry(max_donor, struct thread, candidateelem);
+      if(!list_empty(&cur_thread->candidate_donating_threads)) {
+        struct list_elem *highest_candidate = list_max(&cur_thread->candidate_donating_threads, thread_priority_comparator, NULL);
+        struct thread *highest_candidate_thread = list_entry(highest_candidate, struct thread, candidateelem);
 
-        if(cur_thread->prepriority > max_donor_thread->priority)
+        if(cur_thread->prepriority > highest_candidate_thread->priority)
           thread_set_priority(cur_thread->prepriority);
-        else
-        {
-          cur_thread->priority = max_donor_thread->priority;
+        else {
+          cur_thread->priority = highest_candidate_thread->priority;
           thread_yield();
         }
-      }
-      else
+      } else
         thread_set_priority(cur_thread->prepriority);
     }
   }

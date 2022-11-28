@@ -141,11 +141,8 @@ thread_tick (void)
     kernel_ticks++;
 
   if(thread_mlfqs) {
-    if(strcmp(t->name,"idle")) 
-      t->recent_cpu = addint(t->recent_cpu, 1);
-
-
     if(!(timer_ticks()%4)) {
+      t->recent_cpu = addint(t->recent_cpu, 4);
       struct list_elem *e = list_begin (&all_list);
       while (e != list_end (&all_list)) {
         struct thread *f = list_entry (e, struct thread, allelem);

@@ -113,6 +113,7 @@ int64_t wakingUpTick;
 
       struct thread* parent;
 
+      int exit_error;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */

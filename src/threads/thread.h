@@ -107,6 +107,11 @@ int64_t wakingUpTick;
    // for advanced scheduler
     int nice;
     int recent_cpu;
+      
+      
+      bool ex;
+
+      struct thread* parent;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

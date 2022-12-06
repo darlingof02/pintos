@@ -549,8 +549,12 @@ init_thread (struct thread *t, const char *name, int priority)
   t->prepriority = priority;
   t->waiting_lock_holder = NULL;
   t->waiting_lock = NULL;
+    
+    t->ex = false;
+    t->parent = running_thread();
   list_init (&t->candidate_donating_threads);
   list_push_back (&all_list, &t->allelem);
+    
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

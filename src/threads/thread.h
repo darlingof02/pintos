@@ -109,11 +109,11 @@ int64_t wakingUpTick;
     int recent_cpu;
       
       
-      bool ex;
+      bool waiting;
 
-      struct thread* parent;
+      struct thread* parentThread;
 
-      int exit_error;
+      int exit_code;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */

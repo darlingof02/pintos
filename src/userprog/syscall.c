@@ -7,8 +7,6 @@
 
 static void syscall_handler (struct intr_frame *);
 
-extern bool running;
-void* check_addr(const void*);
 void
 syscall_init (void) 
 {
@@ -30,16 +28,16 @@ syscall_handler (struct intr_frame *f UNUSED)
 		break;
 
 		case SYS_EXIT:
-        thread_current()->parent->ex = true;
-        thread_current()->exit_error = *(p+1);
+        thread_current()->parentThread->waiting = false;
+        thread_current()->exit_code = *(p+1);
         thread_exit();
 		break;
 
 		case SYS_WRITE:
-		if(*(p+5)==1)
-		{
-			putbuf(*(p+6),*(p+7));
-		}
+		//if(*(p+5)==1)
+		//{
+            putbuf(*(p+6),*(p+7));
+		//}
 		break;
 
 		default:

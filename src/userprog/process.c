@@ -464,42 +464,40 @@ setup_stack (void **esp, int argc, char * argv[])
     }
 
   char *token, *save_ptr;
-    int i;
-  int *newargv = calloc(argc,sizeof(int));
-
-    for (i=0;i<argc;i++){
-        *esp -= strlen(argv[i]) + 1;
-        memcpy(*esp,argv[i],strlen(argv[i]) + 1);
-        newargv[i]=*esp;
-    }
-
-  while((int)*esp%4!=0)
-  {
-    *esp-=sizeof(char);
-    char x = 0;
-    memcpy(*esp,&x,sizeof(char));
+  int i;
+  int *newargv[argc];
+  for (i=0;i<argc;i++){
+    *esp -= strlen(argv[i]) + 1;
+    memcpy(*esp,argv[i],strlen(argv[i]) + 1);
+    newargv[i]=*esp;
   }
 
   int zero = 0;
-
+  i = (int) *esp % 4;
+  if (i!=0){
+    *esp -= 4;
+    memcpy(*esp, &zero,4);
+  }
+  
+    
   *esp-=sizeof(int);
-  memcpy(*esp,&zero,sizeof(int));
+  memcpy(*esp,&zero,4);
 
   for(i=argc-1;i>=0;i--)
   {
-    *esp-=sizeof(int);
-    memcpy(*esp,&newargv[i],sizeof(int));
+    *esp-=4;
+    memcpy(*esp,&newargv[i],4);
   }
 
-  int pt = *esp;
-  *esp-=sizeof(int);
-  memcpy(*esp,&pt,sizeof(int));
+  int argvValue = *esp;
+  *esp-=4;
+  memcpy(*esp,&argvValue,4);
 
-  *esp-=sizeof(int);
-  memcpy(*esp,&argc,sizeof(int));
+  *esp-=4;
+  memcpy(*esp,&argc,4);
 
-  *esp-=sizeof(int);
-  memcpy(*esp,&zero,sizeof(int));
+  *esp-=4;
+  memcpy(*esp,&zero,4);
 
   return success;
 }

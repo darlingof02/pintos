@@ -16,9 +16,7 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
-  int * p = f->esp;
-
-
+  int *p = f->esp;
   int system_call = * p;
 
 	switch (system_call)
@@ -34,14 +32,11 @@ syscall_handler (struct intr_frame *f UNUSED)
 		break;
 
 		case SYS_WRITE:
-		//if(*(p+5)==1)
-		//{
             putbuf(*(p+6),*(p+7));
-		//}
 		break;
 
 		default:
-		printf("No match\n");
+        printf ("system call!\n");
 	}
 }
 
